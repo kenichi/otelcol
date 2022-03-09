@@ -2,7 +2,7 @@ defmodule OtelcolTest do
   use ExUnit.Case, async: true
 
   @version Otelcol.latest_version()
-  @config_file "config/otel-collector-config.yml"
+  @config_file "config/otel-collector.yml"
 
   setup do
     Application.put_env(:otelcol, :version, @version)

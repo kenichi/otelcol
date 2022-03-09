@@ -25,4 +25,4 @@ otelcol-*.tar
 # Temporary files, for example, from tests.
 /tmp/
 
-/config/otel-collector-config.yml
+/config/otel-collector.yml

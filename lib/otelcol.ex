@@ -120,8 +120,13 @@ defmodule Otelcol do
       stderr_to_stdout: true
     ]
 
-    bin_path()
-    |> System.cmd(args ++ extra_args, opts)
+    unless File.exists?(zombie_wrapper_path()) do
+      File.write!(zombie_wrapper_path(), zombie_wrapper())
+      File.chmod!(zombie_wrapper_path(), 0o755)
+    end
+
+    zombie_wrapper_path()
+    |> System.cmd([bin_path()] ++ args ++ extra_args, opts)
     |> elem(1)
   end
 
@@ -158,7 +163,7 @@ defmodule Otelcol do
     File.write!(bin_path, binary, [:binary])
     File.chmod(bin_path, 0o755)
 
-    otelcol_config_path = Path.expand("config/otel-collector-config.yml")
+    otelcol_config_path = Path.expand("config/otel-collector.yml")
 
     unless File.exists?(otelcol_config_path) do
       File.write!(otelcol_config_path, """
@@ -254,4 +259,35 @@ defmodule Otelcol do
         raise "couldn't fetch #{url}: #{inspect(other)}"
     end
   end
+
+  defp zombie_wrapper do
+    """
+    #!/usr/bin/env bash
+    #
+    # see [Port documentation](https://hexdocs.pm/elixir/Port.html#module-zombie-operating-system-processes)
+
+    # Start the program in the background
+    exec "$@" &
+    pid1=$!
+
+    # Silence warnings from here on
+    exec >/dev/null 2>&1
+
+    # Read from stdin in the background and
+    # kill running program when stdin closes
+    exec 0<&0 $(
+      while read; do :; done
+      kill -KILL $pid1
+    ) &
+    pid2=$!
+
+    # Clean up
+    wait $pid1
+    ret=$?
+    kill -KILL $pid2
+    exit $ret
+    """
+  end
+
+  defp zombie_wrapper_path, do: Path.expand("_build/otelcol_wrapper")
 end
