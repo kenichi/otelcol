@@ -3,6 +3,43 @@ defmodule Otelcol do
   @latest_version "0.46.0"
 
   @moduledoc """
+  Otelcol is an installer and runner for
+  [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector-contrib).
+
+  ## Profiles
+
+  You can define multiple otelcol profiles. By default, there is a
+  profile called `:default` which you can configure its args, current
+  directory and environment:
+
+      config :otelcol,
+        version: "#{@latest_version}",
+        default: [
+          args: ~w(
+            --config=config/otel-collector.yml
+          )
+        ]
+
+  ## Otelcol configuration
+
+  There is one global configuration for the otelcol application:
+
+    * `:version` - the expected `otecol-contrib` version
+
+  ## Installation
+
+  The first time this package is installed, two things will happen:
+
+    * a default otelcol configuration will be placed in a new
+      `config/otel-collector.yml` file, if it doesn't already exist. See the
+      [otel-collector documentation](https://opentelemetry.io/docs/collector/configuration/)
+      on configuration options.
+
+    * a "zombie process"
+      [wrapper script](https://hexdocs.pm/elixir/Port.html#module-zombie-operating-system-processes)
+      will be written along-side the `otelcol-contrib` binary. This wrapper
+      requires bash and is needed to shut down otelcol properly when the local
+      server exits. This is *not* meant for production use.
   """
 
   use Application
@@ -59,7 +96,7 @@ defmodule Otelcol do
       unknown otelcol profile. Make sure the profile is defined in your config/config.exs file, such as:
 
           config :otelcol,
-            version: "0.46.0",
+            version: "#{latest_version()}",
             #{profile}: [
               args: ~w(
                 --config=config/otel-collector-config.yml
@@ -111,7 +148,7 @@ defmodule Otelcol do
   """
   def run(profile, extra_args) when is_atom(profile) and is_list(extra_args) do
     config = config_for!(profile)
-    args = config[:args] || []
+    args = [bin_path() | config[:args] || []]
 
     opts = [
       cd: config[:cd] || File.cwd!(),
@@ -120,13 +157,8 @@ defmodule Otelcol do
       stderr_to_stdout: true
     ]
 
-    unless File.exists?(zombie_wrapper_path()) do
-      File.write!(zombie_wrapper_path(), zombie_wrapper())
-      File.chmod!(zombie_wrapper_path(), 0o755)
-    end
-
     zombie_wrapper_path()
-    |> System.cmd([bin_path()] ++ args ++ extra_args, opts)
+    |> System.cmd(args ++ extra_args, opts)
     |> elem(1)
   end
 
@@ -147,6 +179,12 @@ defmodule Otelcol do
   Installs otelcol with `configured_version/0`.
   """
   def install do
+    download_and_extract_release()
+    write_otelcol_config()
+    write_zombie_wrapper()
+  end
+
+  defp download_and_extract_release do
     version = configured_version()
     name = "otelcol-contrib_#{version}_#{target()}.tar.gz"
 
@@ -162,7 +200,9 @@ defmodule Otelcol do
     File.mkdir_p!(Path.dirname(bin_path))
     File.write!(bin_path, binary, [:binary])
     File.chmod(bin_path, 0o755)
+  end
 
+  defp write_otelcol_config do
     otelcol_config_path = Path.expand("config/otel-collector.yml")
 
     unless File.exists?(otelcol_config_path) do
@@ -193,6 +233,15 @@ defmodule Otelcol do
             processors: [batch]
             exporters: [logging]
       """)
+    end
+  end
+
+  defp write_zombie_wrapper do
+    path = zombie_wrapper_path()
+
+    unless File.exists?(path) do
+      File.write!(path, zombie_wrapper())
+      File.chmod!(path, 0o755)
     end
   end
 

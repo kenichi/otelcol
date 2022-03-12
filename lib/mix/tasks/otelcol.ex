@@ -4,7 +4,7 @@ defmodule Mix.Tasks.Otelcol do
 
   Usage:
 
-      $ mix otelcol TASK_OPTIONS PROFILE TAILWIND_ARGS
+      $ mix otelcol TASK_OPTIONS PROFILE OTELCOL_ARGS
 
   Example:
 
