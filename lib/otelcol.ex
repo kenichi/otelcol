@@ -1,6 +1,6 @@
 defmodule Otelcol do
   # https://github.com/open-telemetry/opentelemetry-collector-releases/releases
-  @latest_version "0.46.0"
+  @latest_version "0.58.0"
 
   @moduledoc """
   Otelcol is an installer and runner for
@@ -131,7 +131,7 @@ defmodule Otelcol do
     path = bin_path()
 
     with true <- File.exists?(path),
-         {out, 0} <- System.cmd(path, ["--version"]),
+         {out, 0} <- System.cmd(path, ["--version"], stderr_to_stdout: true),
          [vsn] <- Regex.run(~r/otelcol-contrib version ([^\s]+)/, out, capture: :all_but_first) do
       {:ok, vsn}
     else
@@ -198,9 +198,15 @@ defmodule Otelcol do
       :erl_tar.extract({:binary, tgz}, [:memory, :compressed, files: ['otelcol-contrib']])
 
     File.mkdir_p!(Path.dirname(bin_path))
+    remove_if_macos(bin_path)
     File.write!(bin_path, binary, [:binary])
     File.chmod(bin_path, 0o755)
   end
+
+  # macOS includes "protections" where if a file is overwritten without being
+  # removed first, it is considered tampered, and prevented from executing.
+  defp remove_if_macos(bin_path),
+    do: if(:os.type() == {:unix, :darwin}, do: :ok = File.rm(bin_path))
 
   defp write_otelcol_config do
     otelcol_config_path = Path.expand("config/otel-collector.yml")
@@ -315,8 +321,8 @@ defmodule Otelcol do
     #
     # see [Port documentation](https://hexdocs.pm/elixir/Port.html#module-zombie-operating-system-processes)
 
-    # Start the program in the background
-    exec "$@" &
+    # Start the program in the background, filtering proto warnings
+    exec "$@" 2> >(grep -v "duplicate proto type registered") &
     pid1=$!
 
     # Silence warnings from here on
