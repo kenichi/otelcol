@@ -198,9 +198,15 @@ defmodule Otelcol do
       :erl_tar.extract({:binary, tgz}, [:memory, :compressed, files: ['otelcol-contrib']])
 
     File.mkdir_p!(Path.dirname(bin_path))
+    remove_if_macos(bin_path)
     File.write!(bin_path, binary, [:binary])
     File.chmod(bin_path, 0o755)
   end
+
+  # macOS includes "protections" where if a file is overwritten without being
+  # removed first, it is considered tampered, and prevented from executing.
+  defp remove_if_macos(bin_path),
+    do: if(:os.type() == {:unix, :darwin}, do: :ok = File.rm(bin_path))
 
   defp write_otelcol_config do
     otelcol_config_path = Path.expand("config/otel-collector.yml")

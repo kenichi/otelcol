@@ -25,7 +25,7 @@ Once installed, change your `config/config.exs` to pick your
 otelcol version of choice:
 
 ```elixir
-config :otelcol, version: "0.45.0"
+config :otelcol, version: "0.58.0"
 ```
 
 Now you can install `otelcol-contrib` by running:
@@ -51,7 +51,7 @@ directory, the OS environment, and default arguments to the
 
 ```elixir
 config :otelcol,
-  version: "0.46.0",
+  version: "0.58.0",
   default: [
     args: ~w(
       --config=config/otelcol-collector.yml
