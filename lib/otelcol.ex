@@ -1,6 +1,6 @@
 defmodule Otelcol do
   # https://github.com/open-telemetry/opentelemetry-collector-releases/releases
-  @latest_version "0.46.0"
+  @latest_version "0.58.0"
 
   @moduledoc """
   Otelcol is an installer and runner for
@@ -131,7 +131,7 @@ defmodule Otelcol do
     path = bin_path()
 
     with true <- File.exists?(path),
-         {out, 0} <- System.cmd(path, ["--version"]),
+         {out, 0} <- System.cmd(path, ["--version"], stderr_to_stdout: true),
          [vsn] <- Regex.run(~r/otelcol-contrib version ([^\s]+)/, out, capture: :all_but_first) do
       {:ok, vsn}
     else
@@ -315,8 +315,8 @@ defmodule Otelcol do
     #
     # see [Port documentation](https://hexdocs.pm/elixir/Port.html#module-zombie-operating-system-processes)
 
-    # Start the program in the background
-    exec "$@" &
+    # Start the program in the background, filtering proto warnings
+    exec "$@" 2> >(grep -v "duplicate proto type registered") &
     pid1=$!
 
     # Silence warnings from here on
