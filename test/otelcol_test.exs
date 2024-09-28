@@ -24,12 +24,18 @@ defmodule OtelcolTest do
   end
 
   test "updates on install" do
-    Application.put_env(:otelcol, :version, "0.45.0")
+    previous_version =
+      @version
+      |> Version.parse!()
+      |> then(&%Version{&1 | minor: &1.minor - 1})
+      |> Version.to_string()
+
+    Application.put_env(:otelcol, :version, previous_version)
     Mix.Task.rerun("otelcol.install", ["--if-missing"])
 
     assert ExUnit.CaptureIO.capture_io(fn ->
              assert Otelcol.run(:default, ["--version"]) == 0
-           end) =~ "0.45.0"
+           end) =~ previous_version
 
     Application.delete_env(:otelcol, :version)
 

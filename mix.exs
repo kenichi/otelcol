@@ -1,7 +1,7 @@
 defmodule Otelcol.MixProject do
   use Mix.Project
 
-  @version "0.1.2"
+  @version "0.1.3"
   @source_url "https://github.com/kenichi/otelcol"
 
   def project do
@@ -33,9 +33,17 @@ defmodule Otelcol.MixProject do
   end
 
   def application do
+    extra =
+      case Mix.env() do
+        :test ->
+          [:crypto, :inets, :logger, :public_key, :ssl]
+
+        _ ->
+          [:logger]
+      end
+
     [
-      # inets/ssl may be used by Mix tasks but we should not impose them.
-      extra_applications: [:logger],
+      extra_applications: extra,
       mod: {Otelcol, []},
       env: [default: []]
     ]

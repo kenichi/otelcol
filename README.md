@@ -2,7 +2,12 @@
 
 [![CI](https://github.com/kenichi/otelcol/actions/workflows/main.yml/badge.svg)](https://github.com/kenichi/otelcol/actions/workflows/main.yml)
 
-Mix tasks for installing and invoking [otelcol-contrib](https://github.com/open-telemetry/opentelemetry-collector-contrib).
+Mix tasks for installing and invoking [otelcol-contrib](https://github.com/open-telemetry/opentelemetry-collector-contrib) as a sidecar process to an Elixir application. Benefits:
+
+    * mTLS between collector and upstream
+    * local scrape of prometheus metrics
+    * capture logs for sending over OTLP
+
 Copied from [tailwind](https://github.com/phoenixframework/tailwind), with the
 intent of easily running an OpenTelemetry Collector next to the server, in
 development. It uses the contrib version to have as many options for export as
@@ -25,7 +30,7 @@ Once installed, change your `config/config.exs` to pick your
 otelcol version of choice:
 
 ```elixir
-config :otelcol, version: "0.45.0"
+config :otelcol, version: "0.110.0"
 ```
 
 Now you can install `otelcol-contrib` by running:
@@ -51,7 +56,7 @@ directory, the OS environment, and default arguments to the
 
 ```elixir
 config :otelcol,
-  version: "0.46.0",
+  version: "0.110.0",
   default: [
     args: ~w(
       --config=config/otelcol-collector.yml
@@ -87,7 +92,7 @@ on configuration options.
 
 ## License
 
-Copyright (c) 2022 Kenichi Nakamura.
+Copyright (c) 2024 Kenichi Nakamura.
 copied/modded from https://github.com/phoenixframework/tailwind
 Copyright (c) 2021 Wojtek Mach, José Valim.
 

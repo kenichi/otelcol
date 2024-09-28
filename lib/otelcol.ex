@@ -1,6 +1,6 @@
 defmodule Otelcol do
   # https://github.com/open-telemetry/opentelemetry-collector-releases/releases
-  @latest_version "0.46.0"
+  @latest_version "0.110.0"
 
   @moduledoc """
   Otelcol is an installer and runner for
@@ -48,7 +48,7 @@ defmodule Otelcol do
   @doc false
   def start(_, _) do
     unless Application.get_env(:otelcol, :version) do
-      Logger.warn("""
+      Logger.warning("""
       otelcol version is not configured. Please set it in your config files:
 
           config :otelcol, :version, "#{latest_version()}"
@@ -62,7 +62,7 @@ defmodule Otelcol do
         :ok
 
       {:ok, version} ->
-        Logger.warn("""
+        Logger.warning("""
         Outdated otelcol version. Expected #{configured_version}, got #{version}. \
         Please run `mix otelcol.install` or update the version in your config files.\
         """)
@@ -194,8 +194,8 @@ defmodule Otelcol do
     bin_path = bin_path()
     tgz = fetch_body!(url)
 
-    {:ok, [{'otelcol-contrib', binary}]} =
-      :erl_tar.extract({:binary, tgz}, [:memory, :compressed, files: ['otelcol-contrib']])
+    {:ok, [{~c"otelcol-contrib", binary}]} =
+      :erl_tar.extract({:binary, tgz}, [:memory, :compressed, files: [~c"otelcol-contrib"]])
 
     File.mkdir_p!(Path.dirname(bin_path))
     File.write!(bin_path, binary, [:binary])
